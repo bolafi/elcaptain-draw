@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npx --yes chromium-cli --help)",
+      "Bash(npm ls *)",
+      "Bash(npx --yes playwright --version)",
+      "Bash(npm root *)",
+      "Bash(npm init *)",
+      "Bash(lsof -ti:3000 -sTCP:LISTEN)",
+      "Bash(xargs -r kill)",
+      "Bash(node verify2.mjs)",
+      "Bash(npx tsc *)",
+      "Bash(npx eslint *)",
+      "Bash(node verify3.mjs)"
+    ]
+  }
+}
