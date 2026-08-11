@@ -1,4 +1,7 @@
 import { Match, SlotId, Slots, Team } from "@/lib/types";
+import { groupMatchesByDay } from "@/lib/matches";
+import MatchRow from "./MatchRow";
+import MatchGroup from "./MatchGroup";
 
 type Props = {
   teams: Team[];
@@ -30,21 +33,20 @@ export default function MatchesList({ teams, slots, matches }: Props) {
     );
   }
 
+  const groups = groupMatchesByDay(matches);
+
   return (
-    <div className="space-y-2">
-      {matches.map((m) => (
-        <div
-          key={m.id}
-          className="flex items-center justify-between rounded-lg border border-white/15 bg-white/5 px-4 py-2.5"
-        >
-          <span className="text-sm font-medium text-white">
-            {resolveSlot(m.home, slots, teamsById)}
-          </span>
-          <span className="text-xs text-white/40 px-3">vs</span>
-          <span className="text-sm font-medium text-white">
-            {resolveSlot(m.away, slots, teamsById)}
-          </span>
-        </div>
+    <div className="space-y-4">
+      {groups.map((group) => (
+        <MatchGroup key={group.day ?? "none"} day={group.day}>
+          {group.matches.map((m) => (
+            <MatchRow
+              key={m.id}
+              home={resolveSlot(m.home, slots, teamsById)}
+              away={resolveSlot(m.away, slots, teamsById)}
+            />
+          ))}
+        </MatchGroup>
       ))}
     </div>
   );

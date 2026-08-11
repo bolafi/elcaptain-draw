@@ -13,4 +13,5 @@ export type Match = {
   id: string;
   home: SlotId;
   away: SlotId;
+  day: number | null; // day of September (1-30) this match is played on
 };

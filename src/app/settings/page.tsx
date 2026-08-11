@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { Match, SlotId, Team } from "@/lib/types";
-import { MIN_TEAMS, MAX_TEAMS } from "@/lib/constants";
+import { MIN_TEAMS, MAX_TEAMS, SEPTEMBER_DAYS } from "@/lib/constants";
 import { getSlotIds } from "@/lib/groups";
 import { reconcileMatches, reconcileSlots } from "@/lib/reconcile";
+import { groupMatchesByDay } from "@/lib/matches";
 import { useFullscreen } from "@/lib/useFullscreen";
+import MatchRow from "@/components/MatchRow";
+import MatchGroup from "@/components/MatchGroup";
 import {
   loadMatches,
   loadSlots,
@@ -29,6 +32,7 @@ export default function SettingsPage() {
   const [newTeamName, setNewTeamName] = useState("");
   const [homeAlias, setHomeAlias] = useState<SlotId | "">("");
   const [awayAlias, setAwayAlias] = useState<SlotId | "">("");
+  const [dayInput, setDayInput] = useState("");
   const [teamError, setTeamError] = useState<string | null>(null);
   const [matchError, setMatchError] = useState<string | null>(null);
 
@@ -105,11 +109,16 @@ export default function SettingsPage() {
       return;
     }
     setMatchError(null);
-    const next = [...matches, { id: makeId(), home: homeAlias, away: awayAlias }];
+    const day = dayInput ? Number(dayInput) : null;
+    const next = [
+      ...matches,
+      { id: makeId(), home: homeAlias, away: awayAlias, day },
+    ];
     setMatches(next);
     saveMatches(next);
     setHomeAlias("");
     setAwayAlias("");
+    setDayInput("");
   }
 
   function handleRemoveMatch(id: string) {
@@ -195,28 +204,32 @@ export default function SettingsPage() {
       <div>
         <h2 className="text-2xl font-bold text-white mb-1">Matches</h2>
         <p className="text-sm text-white/60 mb-6">
-          Pair up group slots (e.g. A1 vs A2). Once teams are drawn into those
-          slots, the home page will show the real team names.
+          Pair up group slots (e.g. A1 vs A2) and pick the September day
+          they&apos;re played on. Once teams are drawn into those slots, the
+          home page will show the real team names and date.
         </p>
 
-        <div className="space-y-2 mb-4">
-          {matches.map((m) => (
-            <div
-              key={m.id}
-              className="flex items-center justify-between rounded-lg border border-white/15 bg-white/5 px-4 py-2.5"
-            >
-              <span className="text-sm font-medium text-white">
-                {m.home} vs {m.away}
-              </span>
-              <button
-                type="button"
-                onClick={() => handleRemoveMatch(m.id)}
-                className="text-white/40 hover:text-red-400 px-2"
-                aria-label="Remove match"
-              >
-                ✕
-              </button>
-            </div>
+        <div className="space-y-4 mb-4">
+          {groupMatchesByDay(matches).map((group) => (
+            <MatchGroup key={group.day ?? "none"} day={group.day}>
+              {group.matches.map((m) => (
+                <MatchRow
+                  key={m.id}
+                  home={m.home}
+                  away={m.away}
+                  action={
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveMatch(m.id)}
+                      className="text-white/40 hover:text-red-400 px-2"
+                      aria-label="Remove match"
+                    >
+                      ✕
+                    </button>
+                  }
+                />
+              ))}
+            </MatchGroup>
           ))}
           {matches.length === 0 && (
             <p className="text-sm text-white/40 italic">No matches yet.</p>
@@ -252,6 +265,22 @@ export default function SettingsPage() {
                 {id}
               </option>
             ))}
+          </select>
+          <select
+            value={dayInput}
+            onChange={(e) => setDayInput(e.target.value)}
+            className="w-28 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
+          >
+            <option value="" className="bg-[#001220]">
+              No date
+            </option>
+            {Array.from({ length: SEPTEMBER_DAYS }, (_, i) => i + 1).map(
+              (day) => (
+                <option key={day} value={day} className="bg-[#001220]">
+                  Sep {day}
+                </option>
+              )
+            )}
           </select>
           <button
             type="submit"

@@ -11,15 +11,17 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { GroupId, SlotId, Slots, Team } from "@/lib/types";
+import { GroupId, Match, SlotId, Slots, Team } from "@/lib/types";
 import { groupIdsInOrder } from "@/lib/groups";
 import TeamPool, { POOL_ID } from "./TeamPool";
 import Slot from "./Slot";
 import TeamCard from "./TeamCard";
+import MatchesList from "./MatchesList";
 
 type Props = {
   teams: Team[];
   slots: Slots;
+  matches: Match[];
   onSlotsChange: (slots: Slots) => void;
   onReset: () => void;
 };
@@ -27,6 +29,7 @@ type Props = {
 export default function DrawBoard({
   teams,
   slots,
+  matches,
   onSlotsChange,
   onReset,
 }: Props) {
@@ -105,7 +108,7 @@ export default function DrawBoard({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-6xl">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-white">Group Draw</h1>
@@ -122,38 +125,49 @@ export default function DrawBoard({
           </button>
         </div>
 
-        <div className="mb-8">
-          <TeamPool teams={unplacedTeams} />
-        </div>
+        <div className="flex flex-col sm:flex-row gap-8">
+          <div className="sm:w-56 shrink-0">
+            <TeamPool teams={unplacedTeams} />
+          </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {groupIds.map((groupId) => (
-            <div key={groupId}>
-              <h2 className="text-lg font-bold mb-2 text-white">
-                Group {groupId}
-              </h2>
-              <div className="space-y-2">
-                {slotIdsOrdered
-                  .filter((id) => id[0] === groupId)
-                  .map((slotId) => (
-                    <Slot
-                      key={slotId}
-                      slotId={slotId}
-                      team={
-                        slots[slotId] ? teamsById.get(slots[slotId]!)! : null
-                      }
-                    />
-                  ))}
-              </div>
+          <div className="flex-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {groupIds.map((groupId) => (
+                <div key={groupId}>
+                  <h2 className="text-lg font-bold mb-2 text-white">
+                    Group {groupId}
+                  </h2>
+                  <div className="space-y-2">
+                    {slotIdsOrdered
+                      .filter((id) => id[0] === groupId)
+                      .map((slotId) => (
+                        <Slot
+                          key={slotId}
+                          slotId={slotId}
+                          team={
+                            slots[slotId]
+                              ? teamsById.get(slots[slotId]!)!
+                              : null
+                          }
+                        />
+                      ))}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {allPlaced && (
-          <p className="mt-6 text-center text-sm font-medium text-emerald-400">
-            All teams placed — draw complete!
-          </p>
-        )}
+            {allPlaced && (
+              <p className="mt-6 text-center text-sm font-medium text-emerald-400">
+                All teams placed — draw complete!
+              </p>
+            )}
+
+            <div className="mt-10">
+              <h2 className="text-lg font-bold text-white mb-3">Matches</h2>
+              <MatchesList teams={teams} slots={slots} matches={matches} />
+            </div>
+          </div>
+        </div>
       </div>
 
       <DragOverlay>

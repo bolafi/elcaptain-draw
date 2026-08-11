@@ -20,7 +20,7 @@ export default function TeamPool({ teams }: Props) {
       </h2>
       <div
         ref={setNodeRef}
-        className={`flex flex-wrap gap-2 rounded-lg border-2 border-dashed p-3 min-h-20 transition-colors
+        className={`flex flex-col gap-2 rounded-lg border-2 border-dashed p-3 min-h-20 transition-colors
           ${isOver ? "border-sky-400 bg-sky-400/10" : "border-white/20"}`}
       >
         {teams.length === 0 && (

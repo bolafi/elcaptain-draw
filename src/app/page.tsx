@@ -6,7 +6,6 @@ import { Match, Slots, Team } from "@/lib/types";
 import { buildEmptySlots, getSlotIds } from "@/lib/groups";
 import { loadMatches, loadSlots, loadTeams, saveSlots } from "@/lib/storage";
 import DrawBoard from "@/components/DrawBoard";
-import MatchesList from "@/components/MatchesList";
 
 type LoadedState = {
   teams: Team[];
@@ -80,14 +79,10 @@ export default function Home() {
       <DrawBoard
         teams={teams}
         slots={slots}
+        matches={matches}
         onSlotsChange={handleSlotsChange}
         onReset={handleClearPlacements}
       />
-
-      <div className="mx-auto max-w-4xl mt-10">
-        <h2 className="text-lg font-bold text-white mb-3">Matches</h2>
-        <MatchesList teams={teams} slots={slots} matches={matches} />
-      </div>
     </div>
   );
 }
