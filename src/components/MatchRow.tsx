@@ -20,11 +20,11 @@ export default function MatchRow({ number, home, away, time, action }: Props) {
       )}
       {away ? (
         <>
-          <span className="text-md font-medium text-white text-right truncate">
+          <span className="text-md font-medium text-white text-center truncate">
             {home}
           </span>
           <span className="text-xs text-white/40">vs</span>
-          <span className="text-md font-medium text-white truncate">
+          <span className="text-md font-medium text-white text-center truncate">
             {away}
           </span>
         </>

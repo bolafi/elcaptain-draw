@@ -26,12 +26,11 @@ export default function TeamCard({ team, disabled }: Props) {
       style={style}
       {...listeners}
       {...attributes}
-      className={`flex items-center gap-2 rounded-lg border border-white/15 bg-white/10 backdrop-blur-sm px-3 py-2 shadow-sm select-none touch-none
+      className={`flex items-center justify-center gap-2 rounded-lg border border-white/15 bg-black/40 backdrop-blur-sm px-3 py-2 shadow-sm select-none touch-none
         ${disabled ? "opacity-40 cursor-default" : "cursor-grab active:cursor-grabbing"}
         ${isDragging ? "z-50 opacity-70 shadow-lg ring-2 ring-sky-400" : ""}`}
     >
-     
-      <span className="text-2xl font-medium text-white truncate">
+      <span className="text-2xl font-medium text-white text-center truncate">
         {team.name}
       </span>
     </div>

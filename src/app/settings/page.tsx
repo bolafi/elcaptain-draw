@@ -178,7 +178,7 @@ export default function SettingsPage() {
                 type="text"
                 value={team.name}
                 onChange={(e) => handleRenameTeam(team.id, e.target.value)}
-                className="flex-1 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
+                className="flex-1 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white text-center focus:outline-none focus:ring-2 focus:ring-sky-400"
               />
               <button
                 type="button"
