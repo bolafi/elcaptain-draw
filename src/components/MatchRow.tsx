@@ -34,7 +34,7 @@ export default function MatchRow({ number, home, away, time, action }: Props) {
         </span>
       )}
       {time ? (
-        <span className="text-sm font-bold text-green-400 tabular-nums">
+        <span dir="ltr" className="text-sm font-bold text-green-400 tabular-nums">
           {time}
         </span>
       ) : (

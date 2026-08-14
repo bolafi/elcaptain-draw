@@ -45,6 +45,6 @@ export const DEFAULT_MATCHES: Match[] = [
   { id: "m26", number: 26, home: "فائز المباراة 22", away: "فائز المباراة 23", day: 16, time: "7:00 PM", stage: "نصف النهائي" },
 
   // Finals day
-  { id: "m27", number: 27, home: "مباراة المركز الثالث والرابع", away: "", day: 18, time: "6:00 PM", stage: "المركز الثالث والرابع" },
+  { id: "m27", number: 27, home: "مباراة المركز الثالث والرابع", away: "", day: 18, time: "6:00 PM", stage: "النهائيات" },
   { id: "m28", number: 28, home: "المباراة النهائية", away: "", day: 18, time: "7:00 PM", stage: "النهائي" },
 ];
