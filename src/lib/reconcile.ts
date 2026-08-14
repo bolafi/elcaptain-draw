@@ -17,13 +17,23 @@ export function reconcileSlots(teams: Team[], prevSlots: Slots): Slots {
   return next;
 }
 
+const SLOT_ID_PATTERN = /^[AB]\d+$/;
+
 /**
  * Drops any match referencing a slot alias that no longer exists after the
- * team count (and therefore the slot layout) changed.
+ * team count (and therefore the slot layout) changed. Matches whose home/away
+ * aren't slot-id-shaped (knockout-stage placeholders like "Winner M21") are
+ * left alone since they were never tied to the slot layout.
  */
 export function reconcileMatches(teams: Team[], matches: Match[]): Match[] {
   const validSlotIds = new Set(getSlotIds(teams.length));
-  return matches.filter(
-    (m) => validSlotIds.has(m.home) && validSlotIds.has(m.away)
-  );
+  return matches.filter((m) => {
+    const homeIsSlot = SLOT_ID_PATTERN.test(m.home);
+    const awayIsSlot = SLOT_ID_PATTERN.test(m.away);
+    if (!homeIsSlot && !awayIsSlot) return true;
+    return (
+      (!homeIsSlot || validSlotIds.has(m.home as SlotId)) &&
+      (!awayIsSlot || validSlotIds.has(m.away as SlotId))
+    );
+  });
 }

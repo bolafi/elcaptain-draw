@@ -16,7 +16,7 @@ export default function TeamPool({ teams }: Props) {
   return (
     <div>
       <h2 className="text-sm font-semibold text-white/60 mb-2">
-        Teams to draw ({teams.length})
+        الفرق المتبقية ({teams.length})
       </h2>
       <div
         ref={setNodeRef}
@@ -25,7 +25,7 @@ export default function TeamPool({ teams }: Props) {
       >
         {teams.length === 0 && (
           <span className="text-xs text-white/30 italic">
-            All teams placed
+            تم توزيع جميع الفرق
           </span>
         )}
         {teams.map((team) => (

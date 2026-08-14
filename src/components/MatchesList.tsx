@@ -1,4 +1,4 @@
-import { Match, SlotId, Slots, Team } from "@/lib/types";
+import { Match, Slots, Team } from "@/lib/types";
 import { groupMatchesByDay } from "@/lib/matches";
 import MatchRow from "./MatchRow";
 import MatchGroup from "./MatchGroup";
@@ -10,11 +10,11 @@ type Props = {
 };
 
 function resolveSlot(
-  alias: SlotId,
+  alias: string,
   slots: Slots,
   teamsById: Map<string, Team>
 ): string {
-  const teamId = slots[alias];
+  const teamId = alias in slots ? slots[alias as keyof Slots] : null;
   if (teamId) {
     const team = teamsById.get(teamId);
     if (team) return team.name;
@@ -28,7 +28,7 @@ export default function MatchesList({ teams, slots, matches }: Props) {
   if (matches.length === 0) {
     return (
       <p className="text-sm text-white/40 italic">
-        No matches configured yet — add them in Settings.
+        لا توجد مباريات بعد — أضفها من الإعدادات.
       </p>
     );
   }
@@ -38,12 +38,18 @@ export default function MatchesList({ teams, slots, matches }: Props) {
   return (
     <div className="space-y-4">
       {groups.map((group) => (
-        <MatchGroup key={group.day ?? "none"} day={group.day}>
+        <MatchGroup
+          key={group.day ?? "none"}
+          day={group.day}
+          stage={group.matches[0]?.stage}
+        >
           {group.matches.map((m) => (
             <MatchRow
               key={m.id}
+              number={m.number}
               home={resolveSlot(m.home, slots, teamsById)}
               away={resolveSlot(m.away, slots, teamsById)}
+              time={m.time}
             />
           ))}
         </MatchGroup>

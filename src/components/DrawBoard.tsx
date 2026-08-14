@@ -12,7 +12,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { GroupId, Match, SlotId, Slots, Team } from "@/lib/types";
-import { groupIdsInOrder } from "@/lib/groups";
+import { groupIdsInOrder, GROUP_LABELS } from "@/lib/groups";
 import TeamPool, { POOL_ID } from "./TeamPool";
 import Slot from "./Slot";
 import TeamCard from "./TeamCard";
@@ -111,17 +111,16 @@ export default function DrawBoard({
       <div className="mx-auto max-w-6xl">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-white">Group Draw</h1>
+            <h1 className="text-2xl font-bold text-white">قرعة المجموعات</h1>
             <p className="text-sm text-white/60">
-              Drag a team card into an empty slot. Drag onto another team to
-              swap.
+              اسحب بطاقة الفريق إلى خانة فارغة. اسحبها فوق فريق آخر للتبديل.
             </p>
           </div>
           <button
             onClick={onReset}
             className="rounded-md border border-white/20 px-3 py-1.5 text-sm font-medium text-white/70 hover:border-red-400 hover:text-red-400 transition-colors"
           >
-            Clear placements
+            مسح التوزيع
           </button>
         </div>
 
@@ -135,7 +134,7 @@ export default function DrawBoard({
               {groupIds.map((groupId) => (
                 <div key={groupId}>
                   <h2 className="text-lg font-bold mb-2 text-white">
-                    Group {groupId}
+                    {GROUP_LABELS[groupId]}
                   </h2>
                   <div className="space-y-2">
                     {slotIdsOrdered
@@ -158,12 +157,12 @@ export default function DrawBoard({
 
             {allPlaced && (
               <p className="mt-6 text-center text-sm font-medium text-emerald-400">
-                All teams placed — draw complete!
+                تم توزيع جميع الفرق — اكتملت القرعة!
               </p>
             )}
 
             <div className="mt-10">
-              <h2 className="text-lg font-bold text-white mb-3">Matches</h2>
+              <h2 className="text-lg font-bold text-white mb-3">المباريات</h2>
               <MatchesList teams={teams} slots={slots} matches={matches} />
             </div>
           </div>

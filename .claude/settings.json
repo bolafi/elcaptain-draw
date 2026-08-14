@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -sL -o /dev/null -w \"GET / -> %{http_code} \\(final url: %{url_effective}\\)\\\\n\" http://localhost:3000/)",
+      "Bash(curl -sL -o /dev/null -w \"GET /settings -> %{http_code} \\(final url: %{url_effective}\\)\\\\n\" http://localhost:3000/settings)",
+      "Bash(curl -sIL http://localhost:3000/)",
+      "Bash(lsof -iTCP -sTCP:LISTEN -P -n)",
+      "Bash(curl -sL -o /dev/null -w \"GET / -> %{http_code}\\\\n\" http://localhost:3001/)",
+      "Bash(curl -sL -o /dev/null -w \"GET /settings -> %{http_code}\\\\n\" http://localhost:3001/settings)",
+      "Bash(xargs ls)"
+    ]
+  }
+}

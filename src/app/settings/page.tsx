@@ -60,9 +60,14 @@ export default function SettingsPage() {
     const nextSlots = reconcileSlots(nextTeams, loadSlots());
     saveSlots(nextSlots);
 
-    const nextMatches = reconcileMatches(nextTeams, matches);
-    setMatches(nextMatches);
-    saveMatches(nextMatches);
+    // Only prune matches when the roster shrinks. Pruning on every add would
+    // strip group-stage matches referencing slots (e.g. A5, B5) the admin
+    // hasn't reached yet while still building up to the full team count.
+    if (nextTeams.length < teams.length) {
+      const nextMatches = reconcileMatches(nextTeams, matches);
+      setMatches(nextMatches);
+      saveMatches(nextMatches);
+    }
   }
 
   function handleAddTeam(e: React.FormEvent) {
@@ -70,11 +75,11 @@ export default function SettingsPage() {
     const name = newTeamName.trim();
     if (!name) return;
     if (teams.length >= MAX_TEAMS) {
-      setTeamError(`Maximum ${MAX_TEAMS} teams.`);
+      setTeamError(`الحد الأقصى ${MAX_TEAMS} فرق.`);
       return;
     }
     if (teams.some((t) => t.name.toLowerCase() === name.toLowerCase())) {
-      setTeamError("Team names must be unique.");
+      setTeamError("يجب أن تكون أسماء الفرق فريدة.");
       return;
     }
     setTeamError(null);
@@ -96,7 +101,7 @@ export default function SettingsPage() {
     e.preventDefault();
     if (!homeAlias || !awayAlias) return;
     if (homeAlias === awayAlias) {
-      setMatchError("Home and away must be different slots.");
+      setMatchError("يجب أن يكون المضيف والضيف خانتين مختلفتين.");
       return;
     }
     const duplicate = matches.some(
@@ -105,14 +110,23 @@ export default function SettingsPage() {
         (m.home === awayAlias && m.away === homeAlias)
     );
     if (duplicate) {
-      setMatchError("This match already exists.");
+      setMatchError("هذه المباراة موجودة بالفعل.");
       return;
     }
     setMatchError(null);
     const day = dayInput ? Number(dayInput) : null;
+    const nextNumber = matches.reduce((max, m) => Math.max(max, m.number), 0) + 1;
     const next = [
       ...matches,
-      { id: makeId(), home: homeAlias, away: awayAlias, day },
+      {
+        id: makeId(),
+        number: nextNumber,
+        home: homeAlias,
+        away: awayAlias,
+        day,
+        time: null,
+        stage: "دور المجموعات",
+      },
     ];
     setMatches(next);
     saveMatches(next);
@@ -132,25 +146,25 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-12 space-y-12">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-white">Settings</h1>
+        <h1 className="text-3xl font-bold text-white">الإعدادات</h1>
         <button
           type="button"
           onClick={toggleFullscreen}
           className="flex items-center gap-2 rounded-md border border-white/20 px-3 py-1.5 text-sm font-medium text-white/70 hover:border-sky-400 hover:text-white transition-colors"
         >
-          {isFullscreen ? "Exit Full Screen" : "Full Screen"}
+          {isFullscreen ? "الخروج من ملء الشاشة" : "ملء الشاشة"}
         </button>
       </div>
 
       <div>
-        <h2 className="text-2xl font-bold text-white mb-1">Teams</h2>
+        <h2 className="text-2xl font-bold text-white mb-1">الفرق</h2>
         <p className="text-sm text-white/60 mb-6">
-          Manage the {MIN_TEAMS}-{MAX_TEAMS} teams available for the draw.
+          إدارة الفرق ({MIN_TEAMS}-{MAX_TEAMS}) المتاحة للقرعة.
         </p>
 
         {teams.length < MIN_TEAMS && (
           <p className="mb-4 rounded-md border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm text-amber-300">
-            Add at least {MIN_TEAMS} teams for a valid draw.
+            أضف {MIN_TEAMS} فرق على الأقل لإجراء قرعة صحيحة.
           </p>
         )}
 
@@ -170,21 +184,21 @@ export default function SettingsPage() {
                 type="button"
                 onClick={() => handleRemoveTeam(team.id)}
                 className="text-white/40 hover:text-red-400 px-2"
-                aria-label="Remove team"
+                aria-label="إزالة الفريق"
               >
                 ✕
               </button>
             </div>
           ))}
           {teams.length === 0 && (
-            <p className="text-sm text-white/40 italic">No teams yet.</p>
+            <p className="text-sm text-white/40 italic">لا يوجد فرق بعد.</p>
           )}
         </div>
 
         <form onSubmit={handleAddTeam} className="flex items-center gap-2">
           <input
             type="text"
-            placeholder="New team name"
+            placeholder="اسم الفريق الجديد"
             value={newTeamName}
             onChange={(e) => setNewTeamName(e.target.value)}
             disabled={teams.length >= MAX_TEAMS}
@@ -195,34 +209,40 @@ export default function SettingsPage() {
             disabled={teams.length >= MAX_TEAMS}
             className="rounded-md bg-[#0353a4] hover:bg-[#03468a] disabled:opacity-40 disabled:hover:bg-[#0353a4] text-white text-sm font-medium px-4 py-2 transition-colors"
           >
-            Add
+            إضافة
           </button>
         </form>
         {teamError && <p className="mt-2 text-sm text-red-400">{teamError}</p>}
       </div>
 
       <div>
-        <h2 className="text-2xl font-bold text-white mb-1">Matches</h2>
+        <h2 className="text-2xl font-bold text-white mb-1">المباريات</h2>
         <p className="text-sm text-white/60 mb-6">
-          Pair up group slots (e.g. A1 vs A2) and pick the September day
-          they&apos;re played on. Once teams are drawn into those slots, the
-          home page will show the real team names and date.
+          قم بإقران خانات المجموعات (مثل A1 مقابل A2) واختر يوم سبتمبر الذي
+          ستُلعب فيه المباراة. بمجرد توزيع الفرق على هذه الخانات، ستعرض
+          الصفحة الرئيسية أسماء الفرق الحقيقية والتاريخ.
         </p>
 
         <div className="space-y-4 mb-4">
           {groupMatchesByDay(matches).map((group) => (
-            <MatchGroup key={group.day ?? "none"} day={group.day}>
+            <MatchGroup
+              key={group.day ?? "none"}
+              day={group.day}
+              stage={group.matches[0]?.stage}
+            >
               {group.matches.map((m) => (
                 <MatchRow
                   key={m.id}
+                  number={m.number}
                   home={m.home}
                   away={m.away}
+                  time={m.time}
                   action={
                     <button
                       type="button"
                       onClick={() => handleRemoveMatch(m.id)}
                       className="text-white/40 hover:text-red-400 px-2"
-                      aria-label="Remove match"
+                      aria-label="إزالة المباراة"
                     >
                       ✕
                     </button>
@@ -232,7 +252,7 @@ export default function SettingsPage() {
             </MatchGroup>
           ))}
           {matches.length === 0 && (
-            <p className="text-sm text-white/40 italic">No matches yet.</p>
+            <p className="text-sm text-white/40 italic">لا توجد مباريات بعد.</p>
           )}
         </div>
 
@@ -243,7 +263,7 @@ export default function SettingsPage() {
             className="flex-1 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
           >
             <option value="" className="bg-[#001220]">
-              Home slot
+              الفريق المضيف
             </option>
             {slotIds.map((id) => (
               <option key={id} value={id} className="bg-[#001220]">
@@ -251,14 +271,14 @@ export default function SettingsPage() {
               </option>
             ))}
           </select>
-          <span className="text-xs text-white/40">vs</span>
+          <span className="text-xs text-white/40">ضد</span>
           <select
             value={awayAlias}
             onChange={(e) => setAwayAlias(e.target.value as SlotId)}
             className="flex-1 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
           >
             <option value="" className="bg-[#001220]">
-              Away slot
+              الفريق الضيف
             </option>
             {slotIds.map((id) => (
               <option key={id} value={id} className="bg-[#001220]">
@@ -272,12 +292,12 @@ export default function SettingsPage() {
             className="w-28 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
           >
             <option value="" className="bg-[#001220]">
-              No date
+              بدون تاريخ
             </option>
             {Array.from({ length: SEPTEMBER_DAYS }, (_, i) => i + 1).map(
               (day) => (
                 <option key={day} value={day} className="bg-[#001220]">
-                  Sep {day}
+                  {day} سبتمبر
                 </option>
               )
             )}
@@ -286,7 +306,7 @@ export default function SettingsPage() {
             type="submit"
             className="rounded-md bg-[#0353a4] hover:bg-[#03468a] text-white text-sm font-medium px-4 py-2 transition-colors"
           >
-            Add
+            إضافة
           </button>
         </form>
         {matchError && (

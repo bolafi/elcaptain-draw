@@ -1,4 +1,5 @@
 import { Match, Slots, Team } from "./types";
+import { DEFAULT_MATCHES } from "./schedule";
 
 const TEAMS_KEY = "elcaptain-draw-teams";
 const SLOTS_KEY = "elcaptain-draw-slots";
@@ -37,7 +38,7 @@ export function saveSlots(slots: Slots) {
 }
 
 export function loadMatches(): Match[] {
-  return readJSON<Match[]>(MATCHES_KEY, []);
+  return readJSON<Match[]>(MATCHES_KEY, DEFAULT_MATCHES);
 }
 
 export function saveMatches(matches: Match[]) {

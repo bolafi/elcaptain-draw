@@ -25,7 +25,7 @@ export default function Slot({ slotId, team }: Props) {
       {team ? (
         <TeamCard team={team} />
       ) : (
-        <span className="text-xs text-white/30 italic">Drop team here</span>
+        <span className="text-xs text-white/30 italic">أسقط الفريق هنا</span>
       )}
     </div>
   );

@@ -1,5 +1,10 @@
 import { GroupId, SlotId, Slots } from "./types";
 
+export const GROUP_LABELS: Record<GroupId, string> = {
+  A: "المجموعة الأولى",
+  B: "المجموعة الثانية",
+};
+
 /**
  * Splits teamCount across groups A and B as evenly as possible,
  * giving the larger remainder to group A (e.g. 9 -> A:5, B:4).

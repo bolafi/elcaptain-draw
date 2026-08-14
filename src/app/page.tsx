@@ -61,13 +61,13 @@ export default function Home() {
       <div className="flex min-h-[70vh] items-center justify-center px-4">
         <div className="text-center">
           <p className="mb-4 text-white/70">
-            No teams yet. Add teams in Settings to start a draw.
+            لا يوجد فرق بعد. أضف الفرق من الإعدادات لبدء القرعة.
           </p>
           <Link
             href="/settings"
             className="inline-block rounded-md bg-[#0353a4] hover:bg-[#03468a] text-white font-medium px-4 py-2 transition-colors"
           >
-            Go to Settings
+            الذهاب إلى الإعدادات
           </Link>
         </div>
       </div>
