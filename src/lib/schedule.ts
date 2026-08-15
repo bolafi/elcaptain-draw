@@ -8,11 +8,11 @@ import { Match } from "./types";
  */
 export const DEFAULT_MATCHES: Match[] = [
   // Group stage - Group A
-  { id: "m1", number: 1, home: "A1", away: "A2", day: 1, time: "6:00 PM", stage: "المجموعة الأولى" },
-  { id: "m2", number: 2, home: "A3", away: "A4", day: 1, time: "7:00 PM", stage: "المجموعة الأولى" },
+  { id: "m1", number: 1, home: "A1", away: "A2", day: 2, time: "6:00 PM", stage: "المجموعة الأولى" },
+  { id: "m2", number: 2, home: "A3", away: "A4", day: 2, time: "7:00 PM", stage: "المجموعة الأولى" },
   // Group stage - Group B
-  { id: "m3", number: 3, home: "B1", away: "B2", day: 2, time: "6:00 PM", stage: "المجموعة الثانية" },
-  { id: "m4", number: 4, home: "B3", away: "B4", day: 2, time: "7:00 PM", stage: "المجموعة الثانية" },
+  { id: "m3", number: 3, home: "B1", away: "B2", day: 3, time: "6:00 PM", stage: "المجموعة الثانية" },
+  { id: "m4", number: 4, home: "B3", away: "B4", day: 3, time: "7:00 PM", stage: "المجموعة الثانية" },
 
   { id: "m5", number: 5, home: "A5", away: "A1", day: 5, time: "5:00 PM", stage: "المجموعة الأولى" },
   { id: "m6", number: 6, home: "A2", away: "A3", day: 5, time: "6:00 PM", stage: "المجموعة الأولى" },
@@ -46,5 +46,5 @@ export const DEFAULT_MATCHES: Match[] = [
 
   // Finals day
   { id: "m27", number: 27, home: "مباراة المركز الثالث والرابع", away: "", day: 18, time: "6:00 PM", stage: "النهائيات" },
-  { id: "m28", number: 28, home: "المباراة النهائية", away: "", day: 18, time: "7:00 PM", stage: "النهائي" },
+  { id: "m28", number: 28, home: "المباراة النهائية", away: "", day: 18, time: "7:00 PM", stage: "النهائيات" },
 ];

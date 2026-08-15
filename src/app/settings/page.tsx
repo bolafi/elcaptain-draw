@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Match, SlotId, Team } from "@/lib/types";
 import { MIN_TEAMS, MAX_TEAMS, SEPTEMBER_DAYS } from "@/lib/constants";
-import { getSlotIds } from "@/lib/groups";
+import { getSlotIds, matchGroupId } from "@/lib/groups";
 import { reconcileMatches, reconcileSlots } from "@/lib/reconcile";
 import { groupMatchesByDay } from "@/lib/matches";
 import { useFullscreen } from "@/lib/useFullscreen";
@@ -17,6 +17,7 @@ import {
   saveSlots,
   saveTeams,
 } from "@/lib/storage";
+import { DEFAULT_MATCHES } from "@/lib/schedule";
 
 function makeId() {
   return Math.random().toString(36).slice(2, 10);
@@ -141,6 +142,11 @@ export default function SettingsPage() {
     saveMatches(next);
   }
 
+  function handleResetSchedule() {
+    setMatches(DEFAULT_MATCHES);
+    saveMatches(DEFAULT_MATCHES);
+  }
+
   if (!loaded) return null;
 
   return (
@@ -216,7 +222,16 @@ export default function SettingsPage() {
       </div>
 
       <div>
-        <h2 className="text-2xl font-bold text-white mb-1">المباريات</h2>
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-2xl font-bold text-white">المباريات</h2>
+          <button
+            type="button"
+            onClick={handleResetSchedule}
+            className="rounded-md border border-white/20 px-3 py-1.5 text-sm font-medium text-white/70 hover:border-sky-400 hover:text-white transition-colors"
+          >
+            إعادة تعيين الجدول الرسمي
+          </button>
+        </div>
         <p className="text-sm text-white/60 mb-6">
           قم بإقران خانات المجموعات (مثل A1 مقابل A2) واختر يوم سبتمبر الذي
           ستُلعب فيه المباراة. بمجرد توزيع الفرق على هذه الخانات، ستعرض
@@ -224,33 +239,37 @@ export default function SettingsPage() {
         </p>
 
         <div className="space-y-4 mb-4">
-          {groupMatchesByDay(matches).map((group) => (
-            <MatchGroup
-              key={group.day ?? "none"}
-              day={group.day}
-              stage={group.matches[0]?.stage}
-            >
-              {group.matches.map((m) => (
-                <MatchRow
-                  key={m.id}
-                  number={m.number}
-                  home={m.home}
-                  away={m.away}
-                  time={m.time}
-                  action={
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveMatch(m.id)}
-                      className="text-white/40 hover:text-red-400 px-2"
-                      aria-label="إزالة المباراة"
-                    >
-                      ✕
-                    </button>
-                  }
-                />
-              ))}
-            </MatchGroup>
-          ))}
+          {groupMatchesByDay(matches).map((group) => {
+            const isKnockoutDay = group.matches.every((m) => m.number >= 21);
+            return (
+              <MatchGroup
+                key={group.day ?? "none"}
+                day={group.day}
+                stage={isKnockoutDay ? group.matches[0]?.stage : undefined}
+              >
+                {group.matches.map((m) => (
+                  <MatchRow
+                    key={m.id}
+                    number={m.number}
+                    home={m.home}
+                    away={m.away}
+                    time={m.time}
+                    groupId={isKnockoutDay ? null : matchGroupId(m.home)}
+                    action={
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveMatch(m.id)}
+                        className="text-white/40 hover:text-red-400 px-2"
+                        aria-label="إزالة المباراة"
+                      >
+                        ✕
+                      </button>
+                    }
+                  />
+                ))}
+              </MatchGroup>
+            );
+          })}
           {matches.length === 0 && (
             <p className="text-sm text-white/40 italic">لا توجد مباريات بعد.</p>
           )}

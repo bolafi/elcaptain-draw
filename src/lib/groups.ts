@@ -6,6 +6,14 @@ export const GROUP_LABELS: Record<GroupId, string> = {
 };
 
 /**
+ * The group letter a match's home slot belongs to, or null for
+ * knockout-stage matches whose home isn't a slot id (e.g. "Winner M21").
+ */
+export function matchGroupId(home: string): GroupId | null {
+  return home[0] === "A" || home[0] === "B" ? (home[0] as GroupId) : null;
+}
+
+/**
  * Splits teamCount across groups A and B as evenly as possible,
  * giving the larger remainder to group A (e.g. 9 -> A:5, B:4).
  */
