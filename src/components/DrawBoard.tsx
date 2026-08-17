@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -13,10 +13,12 @@ import {
 } from "@dnd-kit/core";
 import { GroupId, Match, SlotId, Slots, Team } from "@/lib/types";
 import { groupIdsInOrder, GROUP_LABELS } from "@/lib/groups";
+import { useShareImage } from "@/hooks/useShareImage";
 import TeamPool, { POOL_ID } from "./TeamPool";
 import Slot from "./Slot";
 import TeamCard from "./TeamCard";
 import MatchesList from "./MatchesList";
+import ShareQrModal from "./ShareQrModal";
 
 type Props = {
   teams: Team[];
@@ -34,6 +36,15 @@ export default function DrawBoard({
   onReset,
 }: Props) {
   const [activeTeamId, setActiveTeamId] = useState<string | null>(null);
+  const shareRef = useRef<HTMLDivElement>(null);
+  const {
+    shareImage,
+    closeShare,
+    isGenerating,
+    error: shareError,
+    qrDataUrl,
+    shareUrl,
+  } = useShareImage(shareRef);
 
   const teamsById = useMemo(() => {
     const map = new Map<string, Team>();
@@ -130,48 +141,78 @@ export default function DrawBoard({
           </div>
 
           <div className="flex-1">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {groupIds.map((groupId) => (
-                <div key={groupId}>
-                  <h2 className="text-lg font-bold mb-2 text-white">
-                    {GROUP_LABELS[groupId]}
-                  </h2>
-                  <div className="space-y-2">
-                    {slotIdsOrdered
-                      .filter((id) => id[0] === groupId)
-                      .map((slotId) => (
-                        <Slot
-                          key={slotId}
-                          slotId={slotId}
-                          team={
-                            slots[slotId]
-                              ? teamsById.get(slots[slotId]!)!
-                              : null
-                          }
-                        />
-                      ))}
+            <div
+              ref={shareRef}
+              className="p-2 rounded-lg"
+              style={{
+                background:
+                  "linear-gradient(160deg, #1a3a52 0%, #0e5488 55%, #1c6fc4 100%)",
+              }}
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {groupIds.map((groupId) => (
+                  <div key={groupId}>
+                    <h2 className="text-lg font-bold mb-2 text-white">
+                      {GROUP_LABELS[groupId]}
+                    </h2>
+                    <div className="space-y-2">
+                      {slotIdsOrdered
+                        .filter((id) => id[0] === groupId)
+                        .map((slotId) => (
+                          <Slot
+                            key={slotId}
+                            slotId={slotId}
+                            team={
+                              slots[slotId]
+                                ? teamsById.get(slots[slotId]!)!
+                                : null
+                            }
+                          />
+                        ))}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            {allPlaced && (
-              <p className="mt-6 text-center text-sm font-medium text-emerald-400">
-                تم توزيع جميع الفرق — اكتملت القرعة!
-              </p>
-            )}
+              {allPlaced && (
+                <p className="mt-6 text-center text-sm font-medium text-emerald-400">
+                  تم توزيع جميع الفرق — اكتملت القرعة!
+                </p>
+              )}
 
-            <div className="mt-10">
-              <h2 className="text-lg font-bold text-white mb-3">المباريات</h2>
-              <MatchesList teams={teams} slots={slots} matches={matches} />
+              <div className="mt-10">
+                <h2 className="text-lg font-bold text-white mb-3">
+                  المباريات
+                </h2>
+                <MatchesList teams={teams} slots={slots} matches={matches} />
+              </div>
             </div>
           </div>
         </div>
+
+        <footer className="mt-10 flex flex-col items-center gap-1 border-t border-white/10 pt-4">
+          <button
+            onClick={shareImage}
+            disabled={isGenerating}
+            className="rounded-md bg-[#0353a4] hover:bg-[#03468a] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-3 py-1.5 transition-colors"
+          >
+            {isGenerating ? "جارٍ التجهيز..." : "extra"}
+          </button>
+          {shareError && <p className="text-xs text-red-400">{shareError}</p>}
+        </footer>
       </div>
 
       <DragOverlay>
         {activeTeam ? <TeamCard team={activeTeam} /> : null}
       </DragOverlay>
+
+      {qrDataUrl && shareUrl && (
+        <ShareQrModal
+          qrDataUrl={qrDataUrl}
+          shareUrl={shareUrl}
+          onClose={closeShare}
+        />
+      )}
     </DndContext>
   );
 }

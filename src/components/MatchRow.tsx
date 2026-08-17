@@ -25,7 +25,7 @@ export default function MatchRow({
   action,
 }: Props) {
   return (
-    <div className="px-4 py-2.5">
+    <div className="px-4 py-6">
       <div className="grid grid-cols-[auto_auto_1fr_auto_1fr_auto_auto] items-center gap-3">
         {number !== undefined ? (
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-sm font-bold text-white tabular-nums">
@@ -45,23 +45,23 @@ export default function MatchRow({
         )}
         {away ? (
           <>
-            <span className="text-md font-medium text-white text-center truncate">
+            <span className="text-2xl font-bold text-white text-center truncate">
               {home}
             </span>
-            <span className="text-xs text-white/40">vs</span>
-            <span className="text-md font-medium text-white text-center truncate">
+            <span className="text-md text-white/40">vs</span>
+            <span className="text-2xl font-bold  text-white text-center truncate">
               {away}
             </span>
           </>
         ) : (
-          <span className="col-span-3 text-md font-medium text-white text-center truncate">
+          <span className="col-span-3 text-2xl font-bold text-white text-center truncate">
             {home}
           </span>
         )}
         {time ? (
           <span
             dir="ltr"
-            className="text-sm font-bold text-green-400 tabular-nums"
+            className="text-md font-bold text-green-400 tabular-nums"
           >
             {time}
           </span>

@@ -281,11 +281,11 @@ export default function SettingsPage() {
             onChange={(e) => setHomeAlias(e.target.value as SlotId)}
             className="flex-1 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
           >
-            <option value="" className="bg-[#001220]">
+            <option value="" className="bg-[#123246]">
               الفريق المضيف
             </option>
             {slotIds.map((id) => (
-              <option key={id} value={id} className="bg-[#001220]">
+              <option key={id} value={id} className="bg-[#123246]">
                 {id}
               </option>
             ))}
@@ -296,11 +296,11 @@ export default function SettingsPage() {
             onChange={(e) => setAwayAlias(e.target.value as SlotId)}
             className="flex-1 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
           >
-            <option value="" className="bg-[#001220]">
+            <option value="" className="bg-[#123246]">
               الفريق الضيف
             </option>
             {slotIds.map((id) => (
-              <option key={id} value={id} className="bg-[#001220]">
+              <option key={id} value={id} className="bg-[#123246]">
                 {id}
               </option>
             ))}
@@ -310,12 +310,12 @@ export default function SettingsPage() {
             onChange={(e) => setDayInput(e.target.value)}
             className="w-28 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
           >
-            <option value="" className="bg-[#001220]">
+            <option value="" className="bg-[#123246]">
               بدون تاريخ
             </option>
             {Array.from({ length: SEPTEMBER_DAYS }, (_, i) => i + 1).map(
               (day) => (
-                <option key={day} value={day} className="bg-[#001220]">
+                <option key={day} value={day} className="bg-[#123246]">
                   {day} سبتمبر
                 </option>
               )
