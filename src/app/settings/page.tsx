@@ -23,6 +23,16 @@ function makeId() {
   return Math.random().toString(36).slice(2, 10);
 }
 
+// Converts a native <input type="time"> value ("HH:MM", 24h) to the
+// "h:mm AM/PM" format used across the schedule (e.g. "6:00 PM").
+function formatTime(time24: string): string {
+  const [hoursStr, minutes] = time24.split(":");
+  const hours24 = Number(hoursStr);
+  const period = hours24 >= 12 ? "PM" : "AM";
+  const hours12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
+  return `${hours12}:${minutes} ${period}`;
+}
+
 type Loaded = { teams: Team[]; matches: Match[] };
 
 export default function SettingsPage() {
@@ -34,6 +44,9 @@ export default function SettingsPage() {
   const [homeAlias, setHomeAlias] = useState<SlotId | "">("");
   const [awayAlias, setAwayAlias] = useState<SlotId | "">("");
   const [dayInput, setDayInput] = useState("");
+  const [stageInput, setStageInput] = useState("");
+  const [timeInput, setTimeInput] = useState("");
+  const [numberInput, setNumberInput] = useState("");
   const [teamError, setTeamError] = useState<string | null>(null);
   const [matchError, setMatchError] = useState<string | null>(null);
 
@@ -114,19 +127,33 @@ export default function SettingsPage() {
       setMatchError("هذه المباراة موجودة بالفعل.");
       return;
     }
+
+    const defaultNumber =
+      matches.reduce((max, m) => Math.max(max, m.number), 0) + 1;
+    const number = numberInput ? Number(numberInput) : defaultNumber;
+    if (!Number.isInteger(number) || number <= 0) {
+      setMatchError("رقم المباراة يجب أن يكون عددًا صحيحًا موجبًا.");
+      return;
+    }
+    if (matches.some((m) => m.number === number)) {
+      setMatchError("رقم المباراة هذا مستخدم بالفعل.");
+      return;
+    }
+
     setMatchError(null);
     const day = dayInput ? Number(dayInput) : null;
-    const nextNumber = matches.reduce((max, m) => Math.max(max, m.number), 0) + 1;
+    const stage = stageInput.trim() || "دور المجموعات";
+    const time = timeInput ? formatTime(timeInput) : null;
     const next = [
       ...matches,
       {
         id: makeId(),
-        number: nextNumber,
+        number,
         home: homeAlias,
         away: awayAlias,
         day,
-        time: null,
-        stage: "دور المجموعات",
+        time,
+        stage,
       },
     ];
     setMatches(next);
@@ -134,6 +161,9 @@ export default function SettingsPage() {
     setHomeAlias("");
     setAwayAlias("");
     setDayInput("");
+    setStageInput("");
+    setTimeInput("");
+    setNumberInput("");
   }
 
   function handleRemoveMatch(id: string) {
@@ -233,9 +263,11 @@ export default function SettingsPage() {
           </button>
         </div>
         <p className="text-sm text-white/60 mb-6">
-          قم بإقران خانات المجموعات (مثل A1 مقابل A2) واختر يوم سبتمبر الذي
-          ستُلعب فيه المباراة. بمجرد توزيع الفرق على هذه الخانات، ستعرض
-          الصفحة الرئيسية أسماء الفرق الحقيقية والتاريخ.
+          قم بإقران خانات المجموعات (مثل A1 مقابل A2)، واختر يوم سبتمبر
+          والوقت واسم المجموعة/الدور، ورقم المباراة (اتركه فارغًا لاستخدام
+          الرقم التالي تلقائيًا، أو أدخل رقم مباراة محذوفة لإعادة استخدامه).
+          بمجرد توزيع الفرق على هذه الخانات، ستعرض الصفحة الرئيسية أسماء
+          الفرق الحقيقية والتاريخ.
         </p>
 
         <div className="space-y-4 mb-4">
@@ -275,58 +307,94 @@ export default function SettingsPage() {
           )}
         </div>
 
-        <form onSubmit={handleAddMatch} className="flex items-center gap-2">
-          <select
-            value={homeAlias}
-            onChange={(e) => setHomeAlias(e.target.value as SlotId)}
-            className="flex-1 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
-          >
-            <option value="" className="bg-[#123246]">
-              الفريق المضيف
-            </option>
-            {slotIds.map((id) => (
-              <option key={id} value={id} className="bg-[#123246]">
-                {id}
+        <form onSubmit={handleAddMatch} className="space-y-2">
+          <div className="flex items-center gap-2">
+            <select
+              value={homeAlias}
+              onChange={(e) => setHomeAlias(e.target.value as SlotId)}
+              className="flex-1 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
+            >
+              <option value="" className="bg-[#123246]">
+                الفريق المضيف
               </option>
-            ))}
-          </select>
-          <span className="text-xs text-white/40">ضد</span>
-          <select
-            value={awayAlias}
-            onChange={(e) => setAwayAlias(e.target.value as SlotId)}
-            className="flex-1 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
-          >
-            <option value="" className="bg-[#123246]">
-              الفريق الضيف
-            </option>
-            {slotIds.map((id) => (
-              <option key={id} value={id} className="bg-[#123246]">
-                {id}
-              </option>
-            ))}
-          </select>
-          <select
-            value={dayInput}
-            onChange={(e) => setDayInput(e.target.value)}
-            className="w-28 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
-          >
-            <option value="" className="bg-[#123246]">
-              بدون تاريخ
-            </option>
-            {Array.from({ length: SEPTEMBER_DAYS }, (_, i) => i + 1).map(
-              (day) => (
-                <option key={day} value={day} className="bg-[#123246]">
-                  {day} سبتمبر
+              {slotIds.map((id) => (
+                <option key={id} value={id} className="bg-[#123246]">
+                  {id}
                 </option>
-              )
-            )}
-          </select>
-          <button
-            type="submit"
-            className="rounded-md bg-[#0353a4] hover:bg-[#03468a] text-white text-sm font-medium px-4 py-2 transition-colors"
-          >
-            إضافة
-          </button>
+              ))}
+            </select>
+            <span className="text-xs text-white/40">ضد</span>
+            <select
+              value={awayAlias}
+              onChange={(e) => setAwayAlias(e.target.value as SlotId)}
+              className="flex-1 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
+            >
+              <option value="" className="bg-[#123246]">
+                الفريق الضيف
+              </option>
+              {slotIds.map((id) => (
+                <option key={id} value={id} className="bg-[#123246]">
+                  {id}
+                </option>
+              ))}
+            </select>
+            <select
+              value={dayInput}
+              onChange={(e) => setDayInput(e.target.value)}
+              className="w-28 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
+            >
+              <option value="" className="bg-[#123246]">
+                بدون تاريخ
+              </option>
+              {Array.from({ length: SEPTEMBER_DAYS }, (_, i) => i + 1).map(
+                (day) => (
+                  <option key={day} value={day} className="bg-[#123246]">
+                    {day} سبتمبر
+                  </option>
+                )
+              )}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <select
+              value={stageInput}
+              onChange={(e) => setStageInput(e.target.value)}
+              className="flex-1 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
+            >
+              <option value="" className="bg-[#123246]">
+                اسم المجموعة
+              </option>
+              <option value="المجموعة الأولى" className="bg-[#123246]">
+                المجموعة الأولى
+              </option>
+              <option value="المجموعة الثانية" className="bg-[#123246]">
+                المجموعة الثانية
+              </option>
+            </select>
+            <input
+              type="time"
+              value={timeInput}
+              onChange={(e) => setTimeInput(e.target.value)}
+              className="w-32 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
+            />
+            <input
+              type="number"
+              min={1}
+              placeholder={`رقم المباراة (${
+                matches.reduce((max, m) => Math.max(max, m.number), 0) + 1
+              })`}
+              value={numberInput}
+              onChange={(e) => setNumberInput(e.target.value)}
+              className="w-40 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-sky-400"
+            />
+            <button
+              type="submit"
+              className="rounded-md bg-[#0353a4] hover:bg-[#03468a] text-white text-sm font-medium px-4 py-2 transition-colors"
+            >
+              إضافة
+            </button>
+          </div>
         </form>
         {matchError && (
           <p className="mt-2 text-sm text-red-400">{matchError}</p>
