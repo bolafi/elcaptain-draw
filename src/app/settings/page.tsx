@@ -33,6 +33,18 @@ function formatTime(time24: string): string {
   return `${hours12}:${minutes} ${period}`;
 }
 
+// Converts a "h:mm AM/PM" string back to the "HH:MM" (24h) value a native
+// <input type="time"> expects, so the edit form can prefill it.
+function toTimeInputValue(time: string | null): string {
+  if (!time) return "";
+  const match = time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return "";
+  const [, hoursStr, minutes, period] = match;
+  let hours = Number(hoursStr) % 12;
+  if (period.toUpperCase() === "PM") hours += 12;
+  return `${String(hours).padStart(2, "0")}:${minutes}`;
+}
+
 type Loaded = { teams: Team[]; matches: Match[] };
 
 export default function SettingsPage() {
@@ -49,6 +61,14 @@ export default function SettingsPage() {
   const [numberInput, setNumberInput] = useState("");
   const [teamError, setTeamError] = useState<string | null>(null);
   const [matchError, setMatchError] = useState<string | null>(null);
+  const [editingMatchId, setEditingMatchId] = useState<string | null>(null);
+  const [editHome, setEditHome] = useState("");
+  const [editAway, setEditAway] = useState("");
+  const [editDay, setEditDay] = useState("");
+  const [editStage, setEditStage] = useState("");
+  const [editTime, setEditTime] = useState("");
+  const [editNumber, setEditNumber] = useState("");
+  const [editError, setEditError] = useState<string | null>(null);
 
   useEffect(() => {
     // localStorage isn't available during SSR, so state must be hydrated
@@ -65,7 +85,11 @@ export default function SettingsPage() {
     setLoaded((prev) => (prev ? { ...prev, matches: next } : prev));
   }
 
-  const slotIds = getSlotIds(teams.length);
+  // Slot options for the match forms are based on the schedule's fixed
+  // capacity (MAX_TEAMS), not how many teams have been named so far —
+  // matches reference slot positions (A1, B3, ...) independent of whether
+  // every team name has been entered yet.
+  const slotIds = getSlotIds(MAX_TEAMS);
 
   function applyTeamsChange(nextTeams: Team[]) {
     setTeams(nextTeams);
@@ -113,7 +137,17 @@ export default function SettingsPage() {
 
   function handleAddMatch(e: React.FormEvent) {
     e.preventDefault();
-    if (!homeAlias || !awayAlias) return;
+    if (
+      !homeAlias ||
+      !awayAlias ||
+      !dayInput ||
+      !stageInput ||
+      !timeInput ||
+      !numberInput
+    ) {
+      setMatchError("جميع الحقول مطلوبة.");
+      return;
+    }
     if (homeAlias === awayAlias) {
       setMatchError("يجب أن يكون المضيف والضيف خانتين مختلفتين.");
       return;
@@ -128,9 +162,7 @@ export default function SettingsPage() {
       return;
     }
 
-    const defaultNumber =
-      matches.reduce((max, m) => Math.max(max, m.number), 0) + 1;
-    const number = numberInput ? Number(numberInput) : defaultNumber;
+    const number = Number(numberInput);
     if (!Number.isInteger(number) || number <= 0) {
       setMatchError("رقم المباراة يجب أن يكون عددًا صحيحًا موجبًا.");
       return;
@@ -141,9 +173,9 @@ export default function SettingsPage() {
     }
 
     setMatchError(null);
-    const day = dayInput ? Number(dayInput) : null;
-    const stage = stageInput.trim() || "دور المجموعات";
-    const time = timeInput ? formatTime(timeInput) : null;
+    const day = Number(dayInput);
+    const stage = stageInput;
+    const time = formatTime(timeInput);
     const next = [
       ...matches,
       {
@@ -170,6 +202,80 @@ export default function SettingsPage() {
     const next = matches.filter((m) => m.id !== id);
     setMatches(next);
     saveMatches(next);
+    if (editingMatchId === id) handleCancelEdit();
+  }
+
+  function handleStartEdit(m: Match) {
+    setEditingMatchId(m.id);
+    setEditHome(m.home);
+    setEditAway(m.away);
+    setEditDay(m.day ? String(m.day) : "");
+    setEditStage(m.stage);
+    setEditTime(toTimeInputValue(m.time));
+    setEditNumber(String(m.number));
+    setEditError(null);
+  }
+
+  function handleCancelEdit() {
+    setEditingMatchId(null);
+    setEditError(null);
+  }
+
+  function handleSaveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingMatchId) return;
+    if (
+      !editHome ||
+      !editAway ||
+      !editDay ||
+      !editStage ||
+      !editTime ||
+      !editNumber
+    ) {
+      setEditError("جميع الحقول مطلوبة.");
+      return;
+    }
+    if (editHome === editAway) {
+      setEditError("يجب أن يكون المضيف والضيف خانتين مختلفتين.");
+      return;
+    }
+    const duplicate = matches.some(
+      (m) =>
+        m.id !== editingMatchId &&
+        ((m.home === editHome && m.away === editAway) ||
+          (m.home === editAway && m.away === editHome))
+    );
+    if (duplicate) {
+      setEditError("هذه المباراة موجودة بالفعل.");
+      return;
+    }
+
+    const number = Number(editNumber);
+    if (!Number.isInteger(number) || number <= 0) {
+      setEditError("رقم المباراة يجب أن يكون عددًا صحيحًا موجبًا.");
+      return;
+    }
+    if (matches.some((m) => m.id !== editingMatchId && m.number === number)) {
+      setEditError("رقم المباراة هذا مستخدم بالفعل.");
+      return;
+    }
+
+    const next = matches.map((m) =>
+      m.id === editingMatchId
+        ? {
+            ...m,
+            home: editHome,
+            away: editAway,
+            day: Number(editDay),
+            stage: editStage,
+            time: formatTime(editTime),
+            number,
+          }
+        : m
+    );
+    setMatches(next);
+    saveMatches(next);
+    handleCancelEdit();
   }
 
   function handleResetSchedule() {
@@ -263,11 +369,10 @@ export default function SettingsPage() {
           </button>
         </div>
         <p className="text-sm text-white/60 mb-6">
-          قم بإقران خانات المجموعات (مثل A1 مقابل A2)، واختر يوم سبتمبر
-          والوقت واسم المجموعة/الدور، ورقم المباراة (اتركه فارغًا لاستخدام
-          الرقم التالي تلقائيًا، أو أدخل رقم مباراة محذوفة لإعادة استخدامه).
-          بمجرد توزيع الفرق على هذه الخانات، ستعرض الصفحة الرئيسية أسماء
-          الفرق الحقيقية والتاريخ.
+          قم بإقران خانات المجموعات (مثل A1 مقابل A2)، وحدد اليوم والوقت
+          واسم المجموعة ورقم المباراة — جميع الحقول مطلوبة (يمكنك إدخال رقم
+          مباراة محذوفة لإعادة استخدامه). بمجرد توزيع الفرق على هذه الخانات،
+          ستعرض الصفحة الرئيسية أسماء الفرق الحقيقية والتاريخ.
         </p>
 
         <div className="space-y-4 mb-4">
@@ -279,26 +384,146 @@ export default function SettingsPage() {
                 day={group.day}
                 stage={isKnockoutDay ? group.matches[0]?.stage : undefined}
               >
-                {group.matches.map((m) => (
-                  <MatchRow
-                    key={m.id}
-                    number={m.number}
-                    home={m.home}
-                    away={m.away}
-                    time={m.time}
-                    groupId={isKnockoutDay ? null : matchGroupId(m.home)}
-                    action={
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveMatch(m.id)}
-                        className="text-white/40 hover:text-red-400 px-2"
-                        aria-label="إزالة المباراة"
-                      >
-                        ✕
-                      </button>
-                    }
-                  />
-                ))}
+                {group.matches.map((m) =>
+                  editingMatchId === m.id ? (
+                    <form
+                      key={m.id}
+                      onSubmit={handleSaveEdit}
+                      className="space-y-2 px-4 py-3"
+                    >
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={editHome}
+                          onChange={(e) => setEditHome(e.target.value)}
+                          required
+                          className="flex-1 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
+                        >
+                          <option value="" className="bg-[#123246]">
+                            الفريق المضيف
+                          </option>
+                          {slotIds.map((id) => (
+                            <option key={id} value={id} className="bg-[#123246]">
+                              {id}
+                            </option>
+                          ))}
+                        </select>
+                        <span className="text-xs text-white/40">ضد</span>
+                        <select
+                          value={editAway}
+                          onChange={(e) => setEditAway(e.target.value)}
+                          required
+                          className="flex-1 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
+                        >
+                          <option value="" className="bg-[#123246]">
+                            الفريق الضيف
+                          </option>
+                          {slotIds.map((id) => (
+                            <option key={id} value={id} className="bg-[#123246]">
+                              {id}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          value={editDay}
+                          onChange={(e) => setEditDay(e.target.value)}
+                          required
+                          className="w-28 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
+                        >
+                          <option value="" className="bg-[#123246]">
+                            اليوم
+                          </option>
+                          {Array.from(
+                            { length: SEPTEMBER_DAYS },
+                            (_, i) => i + 1
+                          ).map((day) => (
+                            <option key={day} value={day} className="bg-[#123246]">
+                              {day} سبتمبر
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={editStage}
+                          onChange={(e) => setEditStage(e.target.value)}
+                          required
+                          className="flex-1 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
+                        >
+                          <option value="" className="bg-[#123246]">
+                            اسم المجموعة
+                          </option>
+                          <option value="المجموعة الأولى" className="bg-[#123246]">
+                            المجموعة الأولى
+                          </option>
+                          <option value="المجموعة الثانية" className="bg-[#123246]">
+                            المجموعة الثانية
+                          </option>
+                        </select>
+                        <input
+                          type="time"
+                          value={editTime}
+                          onChange={(e) => setEditTime(e.target.value)}
+                          required
+                          className="w-32 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
+                        />
+                        <input
+                          type="number"
+                          min={1}
+                          value={editNumber}
+                          onChange={(e) => setEditNumber(e.target.value)}
+                          required
+                          className="w-24 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
+                        />
+                        <button
+                          type="submit"
+                          className="rounded-md bg-[#0353a4] hover:bg-[#03468a] text-white text-sm font-medium px-3 py-2 transition-colors"
+                        >
+                          حفظ
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleCancelEdit}
+                          className="rounded-md border border-white/20 px-3 py-2 text-sm font-medium text-white/70 hover:border-red-400 hover:text-red-400 transition-colors"
+                        >
+                          إلغاء
+                        </button>
+                      </div>
+                      {editError && (
+                        <p className="text-sm text-red-400">{editError}</p>
+                      )}
+                    </form>
+                  ) : (
+                    <MatchRow
+                      key={m.id}
+                      number={m.number}
+                      home={m.home}
+                      away={m.away}
+                      time={m.time}
+                      groupId={isKnockoutDay ? null : matchGroupId(m.home)}
+                      action={
+                        <div className="flex items-center">
+                          <button
+                            type="button"
+                            onClick={() => handleStartEdit(m)}
+                            className="text-white/40 hover:text-sky-400 px-2"
+                            aria-label="تعديل المباراة"
+                          >
+                            ✎
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveMatch(m.id)}
+                            className="text-white/40 hover:text-red-400 px-2"
+                            aria-label="إزالة المباراة"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      }
+                    />
+                  )
+                )}
               </MatchGroup>
             );
           })}
@@ -312,6 +537,7 @@ export default function SettingsPage() {
             <select
               value={homeAlias}
               onChange={(e) => setHomeAlias(e.target.value as SlotId)}
+              required
               className="flex-1 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
             >
               <option value="" className="bg-[#123246]">
@@ -327,6 +553,7 @@ export default function SettingsPage() {
             <select
               value={awayAlias}
               onChange={(e) => setAwayAlias(e.target.value as SlotId)}
+              required
               className="flex-1 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
             >
               <option value="" className="bg-[#123246]">
@@ -341,10 +568,11 @@ export default function SettingsPage() {
             <select
               value={dayInput}
               onChange={(e) => setDayInput(e.target.value)}
+              required
               className="w-28 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
             >
               <option value="" className="bg-[#123246]">
-                بدون تاريخ
+                اليوم
               </option>
               {Array.from({ length: SEPTEMBER_DAYS }, (_, i) => i + 1).map(
                 (day) => (
@@ -360,6 +588,7 @@ export default function SettingsPage() {
             <select
               value={stageInput}
               onChange={(e) => setStageInput(e.target.value)}
+              required
               className="flex-1 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
             >
               <option value="" className="bg-[#123246]">
@@ -376,6 +605,7 @@ export default function SettingsPage() {
               type="time"
               value={timeInput}
               onChange={(e) => setTimeInput(e.target.value)}
+              required
               className="w-32 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
             />
             <input
@@ -385,6 +615,7 @@ export default function SettingsPage() {
                 matches.reduce((max, m) => Math.max(max, m.number), 0) + 1
               })`}
               value={numberInput}
+              required
               onChange={(e) => setNumberInput(e.target.value)}
               className="w-40 rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-sky-400"
             />
